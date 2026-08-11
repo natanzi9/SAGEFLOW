@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurações{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title">
+        <h2>Configurações</h2>
+        <p>Ajuste seu perfil, segurança e gerencie seus dados no sistema</p>
+    </div>
+</div>
+
+<div class="section-grid-equal">
+    <!-- Profile settings -->
+    <div class="content-card">
+        <h3>Informações do Perfil</h3>
+        <form action="{{ url_for('settings.index') }}" method="POST">
+            <input type="hidden" name="action" value="profile">
+            
+            <div class="form-group">
+                <label for="username" class="form-label">Nome de Usuário</label>
+                <input type="text" id="username" name="username" class="form-control" value="{{ current_user.username }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email" class="form-label">Email de Acesso</label>
+                <input type="email" id="email" name="email" class="form-control" value="{{ current_user.email }}" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Salvar Alterações</button>
+        </form>
+        
+        <h3 style="margin-top: 40px;">Segurança (Alterar Senha)</h3>
+        <form action="{{ url_for('settings.index') }}" method="POST">
+            <input type="hidden" name="action" value="password">
+            
+            <div class="form-group">
+                <label for="current_password" class="form-label">Senha Atual</label>
+                <input type="password" id="current_password" name="current_password" class="form-control" required placeholder="Digite sua senha atual">
+            </div>
+            
+            <div class="form-group">
+                <label for="new_password" class="form-label">Nova Senha</label>
+                <input type="password" id="new_password" name="new_password" class="form-control" required placeholder="Crie uma nova senha forte">
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Atualizar Senha</button>
+        </form>
+    </div>
+
+    <!-- Data tools & Danger Zone -->
+    <div class="content-card" style="border-left: 5px solid var(--color-danger); height: fit-content;">
+        <h3 style="color: var(--color-danger);">Zona de Perigo / Ferramentas</h3>
+        <p style="font-size: 0.9rem; color: var(--color-sage); margin-bottom: 25px;">
+            Ações administrativas para limpar dados de transações e contas ou reiniciar o simulador de dados.
+        </p>
+        
+        <!-- Reset Data -->
+        <div style="margin-bottom: 30px; padding-bottom: 25px; border-bottom: 1px solid var(--color-light-gray);">
+            <h4 style="font-size: 1.05rem; color: var(--color-dark-green); margin-bottom: 8px;">Limpar Todos os Dados Financeiros</h4>
+            <p style="font-size: 0.85rem; color: var(--color-sage); margin-bottom: 15px;">
+                Esta ação apagará todas as suas transações, contas bancárias, cartões, metas, investimentos e limites. Seu perfil de usuário continuará ativo.
+            </p>
+            <form action="{{ url_for('settings.reset_db') }}" method="POST" onsubmit="return confirm('Deseja REALMENTE limpar todos os seus dados financeiros de forma definitiva? Esta ação é irreversível.');">
+                <button type="submit" class="btn btn-danger" style="width: 100%;">Apagar Meus Dados Financeiros</button>
+            </form>
+        </div>
+        
+        <!-- Reseed database -->
+        <div>
+            <h4 style="font-size: 1.05rem; color: var(--color-dark-green); margin-bottom: 8px;">Recarregar Dados de Demonstração (Seed)</h4>
+            <p style="font-size: 0.85rem; color: var(--color-sage); margin-bottom: 15px;">
+                Apenas para a conta de demonstração (`demo`). Limpa os dados atuais e reinjeta as movimentações simuladas de 6 meses para visualização de relatórios.
+            </p>
+            <form action="{{ url_for('settings.reseed_db') }}" method="POST" onsubmit="return confirm('Esta ação removerá os dados atuais da conta demo e recarregará a simulação inicial. Confirmar?');">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; border: 1px solid var(--color-sage); color: var(--color-sage);">Reiniciar Dados do Simulador</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

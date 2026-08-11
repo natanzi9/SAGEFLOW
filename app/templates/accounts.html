@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Contas Bancárias{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title">
+        <h2>Contas Bancárias</h2>
+        <p>Gerencie os locais onde seu dinheiro está armazenado</p>
+    </div>
+</div>
+
+<div class="section-grid">
+    <!-- List of accounts -->
+    <div>
+        <div class="cards-grid">
+            {% if accounts %}
+                {% for account in accounts %}
+                    <div class="bank-card {% if loop.index % 2 == 0 %}light{% endif %}">
+                        <div class="bank-card-header">
+                            <div>
+                                <span class="bank-card-type">{{ account.type }}</span>
+                                <h4 class="bank-card-name">{{ account.name }}</h4>
+                            </div>
+                            <!-- Delete form -->
+                            <form action="{{ url_for('accounts.delete', id=account.id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir esta conta? Isso removerá as transações vinculadas.');">
+                                <button type="submit" style="background: none; border: none; cursor: pointer; color: inherit; opacity: 0.7;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                </button>
+                            </form>
+                        </div>
+                        <div>
+                            <span class="bank-card-balance-label">Saldo Atual</span>
+                            <div class="bank-card-balance">R$ {{ "%.2f"|format(account.balance) }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="content-card" style="grid-column: 1 / -1; width: 100%;">
+                    <div class="empty-state">
+                        <p>Nenhuma conta bancária cadastrada.</p>
+                        <p style="font-size: 0.85rem; color: var(--color-sage);">Cadastre uma conta no formulário ao lado para começar a registrar transações.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Add account form -->
+    <div class="content-card" style="height: fit-content;">
+        <h3>Adicionar Conta</h3>
+        <form action="{{ url_for('accounts.add') }}" method="POST">
+            <div class="form-group">
+                <label for="name" class="form-label">Nome da Conta <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Identificação da conta bancária (ex: Itaú Corrente, Nubank Guardado).</span></div></label>
+                <input type="text" id="name" name="name" class="form-control" placeholder="Ex: Itaú Corrente, Nubank Poupança" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="type" class="form-label">Tipo de Conta <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Selecione o tipo de conta para controle e organização interna.</span></div></label>
+                <select id="type" name="type" class="form-control" required>
+                    <option value="Conta Corrente">Conta Corrente</option>
+                    <option value="Poupança">Poupança</option>
+                    <option value="Carteira Digital">Carteira Digital</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="balance" class="form-label">Saldo Inicial <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">O saldo real da sua conta física hoje para iniciar os registros.</span></div></label>
+                <input type="number" id="balance" name="balance" class="form-control" step="0.01" value="0.00" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Cadastrar Conta</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

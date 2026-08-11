@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Metas Financeiras{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title">
+        <h2>Metas Financeiras</h2>
+        <p>Planeje seu futuro poupando para objetivos específicos</p>
+    </div>
+</div>
+
+<div class="section-grid">
+    <!-- Goals List -->
+    <div>
+        {% if goals %}
+            {% for goal in goals %}
+                <div class="content-card" style="margin-bottom: 25px; border-left: 5px solid var(--color-info);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <h4 style="font-size: 1.25rem; color: var(--color-dark-green); margin-bottom: 5px;">{{ goal.name }}</h4>
+                            {% if goal.deadline %}
+                                <span style="font-size: 0.85rem; color: var(--color-sage);">
+                                    Prazo: {{ goal.deadline.strftime('%d/%m/%Y') }}
+                                </span>
+                            {% else %}
+                                <span style="font-size: 0.85rem; color: var(--color-sage);">Sem prazo definido</span>
+                            {% endif %}
+                        </div>
+                        <form action="{{ url_for('goals.delete', id=goal.id) }}" method="POST" onsubmit="return confirm('Deseja excluir esta meta? O saldo não será devolvido automaticamente.');">
+                            <button type="submit" style="background: none; border: none; cursor: pointer; color: var(--color-danger);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div style="margin: 20px 0;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.95rem; margin-bottom: 5px;">
+                            <span style="font-weight: 600;">Acumulado: R$ {{ "%.2f"|format(goal.current_amount) }}</span>
+                            <span style="color: var(--color-sage);">Alvo: R$ {{ "%.2f"|format(goal.target_amount) }}</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: {{ goal.percent }}%; background-color: var(--color-info);"></div>
+                        </div>
+                        <div style="text-align: right; font-size: 0.85rem; color: var(--color-sage); margin-top: 5px;">
+                            {% if goal.target_amount > goal.current_amount %}
+                                Restam R$ {{ "%.2f"|format(goal.target_amount - goal.current_amount) }} ({{ "%.1f"|format(goal.raw_percent) }}%)
+                            {% else %}
+                                <span style="color: var(--color-success); font-weight: 600;">&check; Meta alcançada! Parabéns!</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Deposit into Goal -->
+                    {% if goal.target_amount > goal.current_amount %}
+                        <div style="background-color: var(--color-off-white); padding: 15px; border-radius: var(--border-radius-md); border: 1px solid var(--color-light-gray); margin-top: 15px;">
+                            <h5 style="font-size: 0.9rem; color: var(--color-dark-green); margin-bottom: 10px;">Adicionar Economia</h5>
+                            <form action="{{ url_for('goals.deposit', id=goal.id) }}" method="POST" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <select name="account_id" class="form-control" style="flex: 2; min-width: 180px; padding: 6px 12px; font-size: 0.85rem;" required>
+                                    <option value="">Retirar de qual conta...</option>
+                                    {% for acc in accounts %}
+                                        <option value="{{ acc.id }}">{{ acc.name }} (Saldo: R${{ "%.2f"|format(acc.balance) }})</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="number" name="amount" class="form-control" step="0.01" placeholder="Valor (R$)" style="flex: 1; min-width: 100px; padding: 6px 12px; font-size: 0.85rem;" required>
+                                <button type="submit" class="btn btn-primary btn-sm" style="flex-shrink: 0; background-color: var(--color-info);">Guardar</button>
+                            </form>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="content-card">
+                <div class="empty-state">
+                    <p>Nenhuma meta financeira cadastrada.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Add Goal Form -->
+    <div class="content-card" style="height: fit-content;">
+        <h3>Nova Meta Financeira</h3>
+        <form action="{{ url_for('goals.add') }}" method="POST">
+            <div class="form-group">
+                <label for="name" class="form-label">Nome da Meta <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Dê um nome para identificar seu objetivo (ex: Troca de Carro, Viagem de Férias).</span></div></label>
+                <input type="text" id="name" name="name" class="form-control" placeholder="Ex: Viagem de Férias, Compra de Carro" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="target_amount" class="form-label">Valor Alvo (R$) <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">O valor financeiro final que você quer acumular para esta meta.</span></div></label>
+                <input type="number" id="target_amount" name="target_amount" class="form-control" step="0.01" placeholder="Ex: 5000.00" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="deadline" class="form-label">Prazo (Opcional) <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">A data estimada em que você planeja atingir esta meta de poupança.</span></div></label>
+                <input type="date" id="deadline" name="deadline" class="form-control">
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Criar Meta</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

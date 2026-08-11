@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatórios Financeiros{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title">
+        <h2>Relatórios Inteligentes</h2>
+        <p>Análise aprofundada dos seus dados financeiros, receitas, despesas e patrimônio</p>
+    </div>
+</div>
+
+<div class="section-grid-equal">
+    <!-- Chart 1: Income x Expense last 6 months -->
+    <div class="content-card">
+        <h3>Receitas vs Despesas (Últimos 6 meses)</h3>
+        {% if months %}
+            <div style="height: 300px; position: relative;">
+                <canvas id="incomeExpenseChart"></canvas>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>Dados insuficientes para gerar a evolução histórica.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Chart 2: Cash Flow (Fluxo de caixa) -->
+    <div class="content-card">
+        <h3>Fluxo de Caixa (Líquido mensal)</h3>
+        {% if months %}
+            <div style="height: 300px; position: relative;">
+                <canvas id="cashFlowChart"></canvas>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>Dados insuficientes para gerar o fluxo de caixa.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="section-grid-equal" style="margin-top: 30px;">
+    <!-- Chart 3: Expenses by Category current month -->
+    <div class="content-card">
+        <h3>Despesas por Categoria (Mês Atual)</h3>
+        {% if category_labels %}
+            <div style="height: 300px; position: relative; display: flex; justify-content: center;">
+                <canvas id="categoryChart" width="300" height="300"></canvas>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>Nenhuma despesa registrada no mês atual.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Chart 4: Wealth composition -->
+    <div class="content-card">
+        <h3>Distribuição Patrimonial (Ativos)</h3>
+        <div style="text-align: center; margin-bottom: 15px; font-weight: 700; font-size: 1.25rem; color: var(--color-dark-green);">
+            Total Geral: R$ {{ "%.2f"|format(total_assets) }}
+        </div>
+        <div style="height: 250px; position: relative; display: flex; justify-content: center;">
+            <canvas id="wealthChart" width="250" height="250"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup shared chart fonts
+        Chart.defaults.font.family = 'Outfit';
+        Chart.defaults.color = '#333d37';
+
+        {% if months %}
+        // 1. Income vs Expense Chart (Bar Chart)
+        const ieCtx = document.getElementById('incomeExpenseChart').getContext('2d');
+        new Chart(ieCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ months|tojson }},
+                datasets: [
+                    {
+                        label: 'Receitas',
+                        data: {{ income_by_month|tojson }},
+                        backgroundColor: '#5cb85c',
+                        borderRadius: 5
+                    },
+                    {
+                        label: 'Despesas',
+                        data: {{ expense_by_month|tojson }},
+                        backgroundColor: '#d9534f',
+                        borderRadius: 5
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#E5E2DA' }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // 2. Cash Flow Chart (Line Chart)
+        const cfCtx = document.getElementById('cashFlowChart').getContext('2d');
+        new Chart(cfCtx, {
+            type: 'line',
+            data: {
+                labels: {{ months|tojson }},
+                datasets: [{
+                    label: 'Saldo Líquido (Receitas - Despesas)',
+                    data: {{ net_flow_by_month|tojson }},
+                    borderColor: '#5F7D67',
+                    backgroundColor: 'rgba(95, 125, 103, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#3F5C45'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        grid: { color: '#E5E2DA' }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+        {% endif %}
+
+        {% if category_labels %}
+        // 3. Category Expenses Chart (Doughnut)
+        const catCtx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(catCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ category_labels|tojson }},
+                datasets: [{
+                    data: {{ category_values|tojson }},
+                    backgroundColor: [
+                        '#3F5C45', '#5F7D67', '#8A9A86', '#B0BCAD', '#D3DDD0',
+                        '#f0ad4e', '#d9534f', '#5bc0de', '#777'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+        {% endif %}
+
+        // 4. Wealth Distribution Chart (Pie)
+        const wealthCtx = document.getElementById('wealthChart').getContext('2d');
+        new Chart(wealthCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ wealth_labels|tojson }},
+                datasets: [{
+                    data: {{ wealth_values|tojson }},
+                    backgroundColor: ['#5F7D67', '#3F5C45'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

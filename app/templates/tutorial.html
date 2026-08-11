@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Tutorial de Uso{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title">
+        <h2>Manual e Tutorial da Plataforma</h2>
+        <p>Aprenda a navegar e a tirar o máximo proveito do seu painel financeiro</p>
+    </div>
+</div>
+
+<div class="dashboard-grid" style="grid-template-columns: 1fr;">
+    <div class="content-card" style="border-left: 5px solid var(--color-success);">
+        <h3 style="color: var(--color-dark-green); margin-bottom: 10px;">🌟 Conta de Demonstração Carregada</h3>
+        <p style="font-size: 0.95rem; line-height: 1.6;">
+            Para facilitar seu aprendizado, o sistema já vem populado com 6 meses de histórico simulando o controle financeiro de uma casa real. Você está logado no perfil <strong>{{ current_user.username }}</strong>. Caso queira redefinir a demonstração ou zerar os dados, acesse a tela de <strong>Configurações</strong>.
+        </p>
+    </div>
+</div>
+
+<div class="section-grid-equal" style="margin-top: 20px;">
+    <!-- Column 1: Core Modules -->
+    <div class="content-card">
+        <h3 style="margin-bottom: 25px;">🔌 Módulos Principais e Integração</h3>
+        
+        <div style="margin-bottom: 25px;">
+            <h4 style="color: var(--color-dark-green); display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect></svg>
+                Contas Bancárias
+            </h4>
+            <p style="font-size: 0.85rem; color: var(--color-sage); margin-top: 5px;">
+                Cadastre suas contas (Corrente, Poupança, Carteiras). O saldo acumulado delas compõe seu **Saldo Total** no painel inicial. Ao registrar receitas ou despesas, o saldo é atualizado automaticamente.
+            </p>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <h4 style="color: var(--color-dark-green); display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                Transações
+            </h4>
+            <p style="font-size: 0.85rem; color: var(--color-sage); margin-top: 5px;">
+                Onde a mágica acontece. Registre despesas em contas ou cartões, lance receitas ou transfira dinheiro entre suas próprias contas. O extrato lista tudo de forma cronológica com tags coloridas.
+            </p>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <h4 style="color: var(--color-dark-green); display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                Cartões de Crédito
+            </h4>
+            <p style="font-size: 0.85rem; color: var(--color-sage); margin-top: 5px;">
+                Lançar despesas no cartão não subtrai do seu saldo em conta imediatamente. Ele consome o limite do cartão. Ao clicar em **"Pagar Fatura"**, o valor acumulado é debitado da conta de sua escolha e o limite do cartão é restabelecido.
+            </p>
+        </div>
+
+        <div>
+            <h4 style="color: var(--color-dark-green); display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                Contas a Pagar / Receber
+            </h4>
+            <p style="font-size: 0.85rem; color: var(--color-sage); margin-top: 5px;">
+                Agende compromissos futuros. Contas pendentes como aluguel, luz ou recebimento de salários. Ao liquidá-las com um clique, o sistema pergunta a conta de liquidação e insere o registro automaticamente no extrato.
+            </p>
+        </div>
+    </div>
+
+    <!-- Column 2: Advanced Modules -->
+    <div class="content-card">
+        <h3 style="margin-bottom: 25px;">🚀 Planejamento e Inteligência</h3>
+        
+        <div style="margin-bottom: 25px;">
+            <h4 style="color: var(--color-dark-green); display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                Orçamentos (Gastos Sob Controle)
+            </h4>
+            <p style="font-size: 0.85rem; color: var(--color-sage); margin-top: 5px;">
+                Defina limites para o mês. As despesas de mercado, transporte ou assinaturas são somadas em tempo real. O sistema exibe um progresso visual e altera a cor da barra (verde, amarela ou vermelha) se você estiver prestes a estourar o limite.
+            </p>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <h4 style="color: var(--color-dark-green); display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle></svg>
+                Metas (Cofrinhos Temáticos)
+            </h4>
+            <p style="font-size: 0.85rem; color: var(--color-sage); margin-top: 5px;">
+                Defina alvos de poupança. Quando você tem dinheiro disponível em conta, pode fazer um aporte direto. O sistema deduz da sua conta e acumula o valor na meta com uma barra de preenchimento indicativa.
+            </p>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <h4 style="color: var(--color-dark-green); display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="4"></line><polyline points="6 10 12 4 18 10"></polyline></svg>
+                Investimentos (Evolução Patrimonial)
+            </h4>
+            <p style="font-size: 0.85rem; color: var(--color-sage); margin-top: 5px;">
+                Guarde em ativos como Tesouro Direto, CDB, Ações ou Cripto. Registrar uma compra debita o valor de sua conta. Os resgates calculam o valor e devolvem os recursos para o seu saldo bancário ativo.
+            </p>
+        </div>
+
+        <div>
+            <h4 style="color: var(--color-dark-green); display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line></svg>
+                Relatórios Financeiros
+            </h4>
+            <p style="font-size: 0.85rem; color: var(--color-sage); margin-top: 5px;">
+                Acesse gráficos consolidados de fluxo de caixa mensal, despesas por categoria, comparação receitas x despesas e evolução patrimonial geral.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

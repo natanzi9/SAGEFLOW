@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}Transações{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title">
+        <h2>Transações</h2>
+        <p>Histórico e registro de movimentações financeiras</p>
+    </div>
+</div>
+
+<div class="section-grid">
+    <!-- Transactions List -->
+    <div class="content-card">
+        <h3>Histórico de Transações</h3>
+        
+        {% if transactions %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Origem/Destino</th>
+                            <th>Tipo</th>
+                            <th style="text-align: right;">Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in transactions %}
+                            <tr>
+                                <td>{{ tx.date.strftime('%d/%m/%Y') }}</td>
+                                <td style="font-weight: 500;">
+                                    {{ tx.description or 'Sem descrição' }}
+                                </td>
+                                <td>{{ tx.category }}</td>
+                                <td>
+                                    {% if tx.type == 'transfer' %}
+                                        {{ tx.account.name }} &rarr; {{ tx.destination_account.name }}
+                                    {% elif tx.account_id %}
+                                        {{ tx.account.name }}
+                                    {% elif tx.card_id %}
+                                        {{ tx.card.name }} (Crédito)
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if tx.type == 'income' %}
+                                        <span class="badge badge-income">Receita</span>
+                                    {% elif tx.type == 'expense' %}
+                                        <span class="badge badge-expense">Despesa</span>
+                                    {% else %}
+                                        <span class="badge badge-transfer">Transf.</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: right; font-weight: 600; color: {% if tx.type == 'income' %}var(--color-success){% elif tx.type == 'expense' %}var(--color-danger){% else %}var(--color-info){% endif %};">
+                                    {% if tx.type == 'income' %}+{% elif tx.type == 'expense' %}-{% endif %} R$ {{ "%.2f"|format(tx.amount) }}
+                                </td>
+                                <td>
+                                    <form action="{{ url_for('transactions.delete', id=tx.id) }}" method="POST" onsubmit="return confirm('Deseja excluir esta transação? O saldo da conta será revertido.');">
+                                        <button type="submit" style="background: none; border: none; cursor: pointer; color: var(--color-danger);">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>Nenhuma transação registrada ainda.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Add Transaction Form -->
+    <div class="content-card" style="height: fit-content;">
+        <h3>Registrar Movimentação</h3>
+        <form action="{{ url_for('transactions.add') }}" method="POST">
+            <div class="form-group">
+                <label for="tx-type" class="form-label">Tipo de Transação <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Escolha 'Despesa' para saídas de dinheiro, 'Receita' para entradas ou 'Transferência' para mover valores entre suas contas.</span></div></label>
+                <select id="tx-type" name="type" class="form-control" required>
+                    <option value="expense">Despesa (Gasto)</option>
+                    <option value="income">Receita (Entrada)</option>
+                    <option value="transfer">Transferência</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="pay-method-container">
+                <label for="pay_method" class="form-label">Forma de Pagamento <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Pagar debitando na hora de uma conta bancária ou acumulando na fatura de um cartão de crédito.</span></div></label>
+                <select id="pay_method" name="pay_method" class="form-control">
+                    <option value="account">Conta Bancária (Débito/Saldo)</option>
+                    <option value="card">Cartão de Crédito</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="account-select-container">
+                <label for="account_id" class="form-label">Conta Bancária (Origem) <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Conta de onde sairá o dinheiro (para despesas/transferências) ou onde será depositada a receita.</span></div></label>
+                <select id="account_id" name="account_id" class="form-control">
+                    <option value="">Selecione a conta...</option>
+                    {% for acc in accounts %}
+                        <option value="{{ acc.id }}">{{ acc.name }} (Saldo: R${{ "%.2f"|format(acc.balance) }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group" id="card-select-container" style="display: none;">
+                <label for="card_id" class="form-label">Cartão de Crédito <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">O cartão que receberá a cobrança na fatura aberta atual.</span></div></label>
+                <select id="card_id" name="card_id" class="form-control">
+                    <option value="">Selecione o cartão...</option>
+                    {% for card in cards %}
+                        <option value="{{ card.id }}">{{ card.name }} (Limite disp: R${{ "%.2f"|format(card.limit - card.current_spend) }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group" id="dest-account-container" style="display: none;">
+                <label for="destination_account_id" class="form-label">Conta Bancária (Destino) <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">A conta bancária que receberá os fundos transferidos.</span></div></label>
+                <select id="destination_account_id" name="destination_account_id" class="form-control">
+                    <option value="">Selecione a conta de destino...</option>
+                    {% for acc in accounts %}
+                        <option value="{{ acc.id }}">{{ acc.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="category" class="form-label">Categoria <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Importante para organizar o relatório de gastos e monitorar limites de orçamentos.</span></div></label>
+                <select id="category" name="category" class="form-control" required>
+                    <option value="Alimentação">Alimentação</option>
+                    <option value="Salário">Salário</option>
+                    <option value="Moradia">Moradia</option>
+                    <option value="Transporte">Transporte</option>
+                    <option value="Lazer">Lazer</option>
+                    <option value="Saúde">Saúde</option>
+                    <option value="Educação">Educação</option>
+                    <option value="Assinaturas/Serviços">Assinaturas/Serviços</option>
+                    <option value="Outros">Outros</option>
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="amount" class="form-label">Valor (R$) <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Insira o valor numérico da movimentação financeira (use ponto para centavos).</span></div></label>
+                    <input type="number" id="amount" name="amount" class="form-control" step="0.01" required placeholder="0,00">
+                </div>
+                <div class="form-group">
+                    <label for="date" class="form-label">Data <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">O dia em que a movimentação foi ou será realizada.</span></div></label>
+                    <input type="date" id="date" name="date" class="form-control" required value="{{ today_str }}">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="description" class="form-label">Descrição <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Uma breve anotação para você lembrar do que se trata (ex: Mercado Pão de Açúcar).</span></div></label>
+                <input type="text" id="description" name="description" class="form-control" placeholder="Ex: Mercado do mês, Combustível, etc.">
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Salvar Transação</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set default today's date in input field
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.getElementById('date');
+        if (dateInput && !dateInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+        }
+    });
+</script>
+{% endblock %}

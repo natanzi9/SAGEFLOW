@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Recuperar Senha{% endblock %}
+
+{% block auth_content %}
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <div class="auth-form-side">
+            <div class="auth-header">
+                <h1>SAGEFLOW</h1>
+                <p>Recuperação de Senha</p>
+            </div>
+            
+            <!-- Notifications -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <span>{{ message }}</span>
+                            <button onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer; color:inherit; font-weight:700;">&times;</button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form action="{{ url_for('auth.recover_password') }}" method="POST">
+                <div class="form-group">
+                    <label for="email" class="form-label">Confirme seu Email</label>
+                    <input type="email" id="email" name="email" class="form-control" required placeholder="Digite o email cadastrado">
+                </div>
+                
+                <div class="form-group">
+                    <label for="new_password" class="form-label">Nova Senha</label>
+                    <input type="password" id="new_password" name="new_password" class="form-control" required placeholder="Digite a nova senha">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Redefinir Senha</button>
+            </form>
+            
+            <div style="margin-top: 25px; text-align: center; font-size: 0.9rem; color: var(--color-sage);">
+                <p>Lembrou a senha? <a href="{{ url_for('auth.login') }}" style="color: var(--color-dark-green); font-weight: 600; text-decoration: none;">Faça login</a></p>
+            </div>
+        </div>
+        <div class="auth-image-side">
+            <img src="{{ url_for('static', filename='img/auth_hero.png') }}" alt="Gestão Financeira Sageflow">
+        </div>
+    </div>
+</div>
+{% endblock %}

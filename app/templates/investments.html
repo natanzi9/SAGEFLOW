@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}Investimentos{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title">
+        <h2>Investimentos</h2>
+        <p>Acompanhe e controle seu crescimento patrimonial</p>
+    </div>
+</div>
+
+<div class="dashboard-grid" style="grid-template-columns: 1fr;">
+    <div class="summary-card savings" style="padding: 20px 25px;">
+        <span class="card-label">Patrimônio Total Investido</span>
+        <span class="card-value" style="font-size: 2.2rem; color: var(--color-dark-green);">
+            R$ {{ "%.2f"|format(total_invested) }}
+        </span>
+    </div>
+</div>
+
+<div class="section-grid">
+    <!-- Allocation & Asset list -->
+    <div>
+        <!-- Asset chart card -->
+        {% if types_labels %}
+            <div class="content-card" style="margin-bottom: 25px;">
+                <h3>Composição da Carteira</h3>
+                <div style="max-height: 250px; display: flex; justify-content: center; position: relative;">
+                    <canvas id="portfolioChart" width="250" height="250"></canvas>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Assets List Card -->
+        <div class="content-card">
+            <h3>Meus Ativos</h3>
+            
+            {% if investments %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Ativo</th>
+                                <th>Tipo</th>
+                                <th>Data Compra</th>
+                                <th>Total Investido</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inv in investments %}
+                                <tr>
+                                    <td style="font-weight: 500;">{{ inv.name }}</td>
+                                    <td>{{ inv.type }}</td>
+                                    <td>{{ inv.purchase_date.strftime('%d/%m/%Y') }}</td>
+                                    <td style="font-weight: 600; color: var(--color-dark-green);">
+                                        R$ {{ "%.2f"|format(inv.amount) }}
+                                    </td>
+                                    <td>
+                                        <!-- Redeem form -->
+                                        <div style="background-color: var(--color-off-white); padding: 10px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-light-gray); margin-bottom: 10px;">
+                                            <form action="{{ url_for('investments.redeem', id=inv.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 5px;">
+                                                <select name="account_id" class="form-control" style="padding: 4px; font-size: 0.75rem;" required>
+                                                    <option value="">Resgatar para...</option>
+                                                    {% for acc in accounts %}
+                                                        <option value="{{ acc.id }}">{{ acc.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div style="display: flex; gap: 5px;">
+                                                    <input type="number" name="amount" class="form-control" step="0.01" max="{{ inv.amount }}" placeholder="Valor (R$)" style="padding: 4px; font-size: 0.75rem; flex-grow: 1;" required>
+                                                    <button type="submit" class="btn btn-primary btn-sm" style="padding: 4px 8px; font-size: 0.7rem; background-color: var(--color-sage);">Resgatar</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        
+                                        <form action="{{ url_for('investments.delete', id=inv.id) }}" method="POST" onsubmit="return confirm('Deseja excluir este registro de investimento? Não haverá impacto em suas contas.');">
+                                            <button type="submit" style="background: none; border: none; cursor: pointer; color: var(--color-danger); font-size: 0.8rem;">Excluir registro</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>Nenhum ativo investido cadastrado.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Buy Asset / Add form -->
+    <div class="content-card" style="height: fit-content;">
+        <h3>Registrar Investimento</h3>
+        <form action="{{ url_for('investments.add') }}" method="POST">
+            <div class="form-group">
+                <label for="name" class="form-label">Nome do Ativo</label>
+                <input type="text" id="name" name="name" class="form-control" placeholder="Ex: Tesouro Selic 2029, Ações Petrobras" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="type" class="form-label">Tipo de Ativo</label>
+                <select id="type" name="type" class="form-control" required>
+                    <option value="Tesouro Direto">Tesouro Direto</option>
+                    <option value="CDB">CDB</option>
+                    <option value="ETFs">ETFs</option>
+                    <option value="Ações">Ações</option>
+                    <option value="Criptomoedas">Criptomoedas</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="amount" class="form-label">Valor Investido (R$)</label>
+                <input type="number" id="amount" name="amount" class="form-control" step="0.01" placeholder="Ex: 1000.00" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="account_id" class="form-label">Origem do Dinheiro</label>
+                <select id="account_id" name="account_id" class="form-control" required>
+                    <option value="">Selecione a conta de pagamento...</option>
+                    {% for acc in accounts %}
+                        <option value="{{ acc.id }}">{{ acc.name }} (Saldo: R${{ "%.2f"|format(acc.balance) }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="purchase_date" class="form-label">Data de Compra</label>
+                <input type="date" id="purchase_date" name="purchase_date" class="form-control" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Comprar/Registrar</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if types_labels %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set today's date
+        const dateInput = document.getElementById('purchase_date');
+        if (dateInput && !dateInput.value) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        const ctx = document.getElementById('portfolioChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: {{ types_labels|tojson }},
+                datasets: [{
+                    data: {{ types_values|tojson }},
+                    backgroundColor: [
+                        '#3F5C45',
+                        '#5F7D67',
+                        '#8A9A86',
+                        '#B0BCAD',
+                        '#D3DDD0'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            font: {
+                                family: 'Outfit',
+                                size: 12
+                            },
+                            color: '#333d37'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

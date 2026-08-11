@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title">
+        <h2>Painel Financeiro <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Visão geral unificada contendo saldos bancários, faturamento, despesas do mês e progresso de metas.</span></div></h2>
+        <p>Visão geral das finanças da sua casa</p>
+    </div>
+    <div>
+        <a href="{{ url_for('transactions.index') }}" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Nova Transação
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="dashboard-grid">
+    <div class="summary-card">
+        <span class="card-label">Saldo em Contas <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Soma do saldo líquido atual de todas as suas contas correntes, poupanças e carteiras.</span></div></span>
+        <span class="card-value">R$ {{ "%.2f"|format(total_balance) }}</span>
+    </div>
+    
+    <div class="summary-card income">
+        <span class="card-label">Receitas (Mês) <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Dinheiro que entrou este mês (ex: salários, freelances).</span></div></span>
+        <span class="card-value" style="color: var(--color-success);">+ R$ {{ "%.2f"|format(monthly_income) }}</span>
+    </div>
+    
+    <div class="summary-card expense">
+        <span class="card-label">Despesas (Mês) <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Despesas pagas em conta e compras registradas no cartão de crédito este mês.</span></div></span>
+        <span class="card-value" style="color: var(--color-danger);">- R$ {{ "%.2f"|format(monthly_expenses) }}</span>
+    </div>
+    
+    <div class="summary-card savings">
+        <span class="card-label">Economia líquida <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Quanto sobrou este mês (Receitas menos Despesas).</span></div></span>
+        <span class="card-value" style="color: {% if savings >= 0 %}var(--color-info){% else %}var(--color-danger){% endif %};">
+            R$ {{ "%.2f"|format(savings) }}
+        </span>
+    </div>
+</div>
+
+<div class="section-grid">
+    <!-- Charts or lists -->
+    <div class="content-card">
+        <h3>Distribuição de Gastos do Mês</h3>
+        {% if categories_labels %}
+            <div style="max-height: 300px; display: flex; justify-content: center; position: relative;">
+                <canvas id="expensesChart" width="300" height="300"></canvas>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>Nenhuma despesa registrada neste mês para gerar o gráfico.</p>
+                <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary btn-sm">Adicionar Despesa</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Goals -->
+    <div class="content-card">
+        <h3>
+            <span>Metas Ativas</span>
+            <a href="{{ url_for('goals.index') }}" style="font-size: 0.85rem; color: var(--color-sage); text-decoration: none;">Ver todas</a>
+        </h3>
+        
+        {% if goals %}
+            {% for goal in goals %}
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600;">
+                        <span>{{ goal.name }}</span>
+                        <span>R$ {{ "%.2f"|format(goal.current_amount) }} / R$ {{ "%.2f"|format(goal.target_amount) }}</span>
+                    </div>
+                    <div class="progress-container" style="margin-top: 5px;">
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: {{ goal.current_amount / goal.target_amount * 100 if goal.target_amount > 0 else 0 }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <p>Você não possui metas financeiras cadastradas.</p>
+                <a href="{{ url_for('goals.index') }}" class="btn btn-secondary btn-sm">Definir Meta</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="section-grid-equal">
+    <!-- Upcoming Payable -->
+    <div class="content-card">
+        <h3>
+            <span>Contas Próximas a Pagar</span>
+            <a href="{{ url_for('bills.index') }}" style="font-size: 0.85rem; color: var(--color-sage); text-decoration: none;">Gerenciar</a>
+        </h3>
+        
+        {% if upcoming_payable %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Vencimento</th>
+                            <th style="text-align: right;">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in upcoming_payable %}
+                            <tr>
+                                <td style="font-weight: 500;">{{ bill.name }}</td>
+                                <td>{{ bill.due_date.strftime('%d/%m/%Y') }}</td>
+                                <td style="text-align: right; font-weight: 600; color: var(--color-danger);">
+                                    R$ {{ "%.2f"|format(bill.amount) }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>Nenhuma conta a pagar pendente.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Upcoming Receivable -->
+    <div class="content-card">
+        <h3>
+            <span>Contas a Receber</span>
+            <a href="{{ url_for('bills.index') }}" style="font-size: 0.85rem; color: var(--color-sage); text-decoration: none;">Gerenciar</a>
+        </h3>
+        
+        {% if upcoming_receivable %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Data Esperada</th>
+                            <th style="text-align: right;">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in upcoming_receivable %}
+                            <tr>
+                                <td style="font-weight: 500;">{{ bill.name }}</td>
+                                <td>{{ bill.expected_date.strftime('%d/%m/%Y') }}</td>
+                                <td style="text-align: right; font-weight: 600; color: var(--color-success);">
+                                    R$ {{ "%.2f"|format(bill.amount) }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>Nenhum recebimento planejado.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if categories_labels %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('expensesChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ categories_labels|tojson }},
+                datasets: [{
+                    data: {{ categories_values|tojson }},
+                    backgroundColor: [
+                        '#5F7D67',
+                        '#3F5C45',
+                        '#4E6E58',
+                        '#8A9A86',
+                        '#B0BCAD',
+                        '#D3DDD0',
+                        '#f0ad4e',
+                        '#d9534f'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            font: {
+                                family: 'Outfit',
+                                size: 12
+                            },
+                            color: '#333d37'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

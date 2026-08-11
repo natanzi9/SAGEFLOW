@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastrar{% endblock %}
+
+{% block auth_content %}
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <div class="auth-form-side">
+            <div class="auth-header">
+                <h1>SAGEFLOW</h1>
+                <p>Crie sua conta familiar para começar</p>
+            </div>
+            
+            <!-- Notifications -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <span>{{ message }}</span>
+                            <button onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer; color:inherit; font-weight:700;">&times;</button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form action="{{ url_for('auth.register') }}" method="POST">
+                <div class="form-group">
+                    <label for="username" class="form-label">Nome de Usuário</label>
+                    <input type="text" id="username" name="username" class="form-control" required placeholder="Ex: silva_familia">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" id="email" name="email" class="form-control" required placeholder="Ex: contato@familia.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Senha</label>
+                    <input type="password" id="password" name="password" class="form-control" required placeholder="Crie uma senha forte">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Cadastrar</button>
+            </form>
+            
+            <div style="margin-top: 25px; text-align: center; font-size: 0.9rem; color: var(--color-sage);">
+                <p>Já tem uma conta? <a href="{{ url_for('auth.login') }}" style="color: var(--color-dark-green); font-weight: 600; text-decoration: none;">Entre aqui</a></p>
+            </div>
+        </div>
+        <div class="auth-image-side">
+            <img src="{{ url_for('static', filename='img/auth_hero.png') }}" alt="Gestão Financeira Sageflow">
+        </div>
+    </div>
+</div>
+{% endblock %}

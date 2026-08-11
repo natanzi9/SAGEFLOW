@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}Contas a Pagar e Receber{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title">
+        <h2>Contas a Pagar e Receber</h2>
+        <p>Evite atrasos controlando seus compromissos e recebimentos futuros</p>
+    </div>
+</div>
+
+<div class="section-grid-equal">
+    <!-- Accounts Payable (Contas a Pagar) -->
+    <div class="content-card">
+        <h3>Contas a Pagar (Despesas Futuras)</h3>
+        
+        <!-- Add Bill Payable Form -->
+        <form action="{{ url_for('bills.add_payable') }}" method="POST" style="margin-bottom: 30px; padding: 20px; background-color: var(--color-off-white); border-radius: var(--border-radius-md); border: 1px solid var(--color-light-gray);">
+            <h4 style="font-size: 1rem; color: var(--color-dark-green); margin-bottom: 15px;">Nova Conta a Pagar</h4>
+            <div class="form-group">
+                <input type="text" name="name" class="form-control" placeholder="Descrição (Ex: Conta de Luz, Aluguel)" required style="padding: 8px 12px; font-size: 0.9rem;">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <input type="number" name="amount" class="form-control" step="0.01" placeholder="Valor (R$)" required style="padding: 8px 12px; font-size: 0.9rem;">
+                </div>
+                <div class="form-group">
+                    <input type="date" name="due_date" class="form-control" required style="padding: 8px 12px; font-size: 0.9rem;">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Adicionar Conta a Pagar</button>
+        </form>
+
+        <!-- Unpaid Bills list -->
+        <h4 style="font-size: 1.1rem; color: var(--color-dark-green); margin-bottom: 15px;">Pendentes</h4>
+        {% set pending_payables = bills_payable | rejectattr('status', 'equalto', 'paid') | list %}
+        {% if pending_payables %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Vencimento</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in pending_payables %}
+                            <tr>
+                                <td style="font-weight: 500;">{{ bill.name }}</td>
+                                <td>{{ bill.due_date.strftime('%d/%m/%Y') }}</td>
+                                <td style="font-weight: 600; color: var(--color-danger);">R$ {{ "%.2f"|format(bill.amount) }}</td>
+                                <td>
+                                    <!-- Simple Pay Dropdown Form -->
+                                    <form action="{{ url_for('bills.pay_payable', id=bill.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 5px;">
+                                        <select name="account_id" class="form-control" style="padding: 4px 8px; font-size: 0.8rem;" required>
+                                            <option value="">Debitar de...</option>
+                                            {% for acc in accounts %}
+                                                <option value="{{ acc.id }}">{{ acc.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="btn btn-primary btn-sm" style="padding: 4px 8px; font-size: 0.75rem;">Marcar como Paga</button>
+                                    </form>
+                                    
+                                    <form action="{{ url_for('bills.delete_payable', id=bill.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Deseja excluir esta conta?');">
+                                        <button type="submit" style="background: none; border: none; cursor: pointer; color: var(--color-danger); font-size: 0.8rem;">Excluir</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p style="font-size: 0.9rem; color: var(--color-sage); text-align: center; margin: 20px 0;">Nenhuma conta a pagar pendente.</p>
+        {% endif %}
+
+        <!-- Paid History -->
+        {% set paid_payables = bills_payable | selectattr('status', 'equalto', 'paid') | list %}
+        {% if paid_payables %}
+            <h4 style="font-size: 1.1rem; color: var(--color-dark-green); margin-top: 30px; margin-bottom: 15px;">Pagas Recentemente</h4>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in paid_payables %}
+                            <tr>
+                                <td>{{ bill.name }}</td>
+                                <td style="text-decoration: line-through; opacity: 0.6;">R$ {{ "%.2f"|format(bill.amount) }}</td>
+                                <td><span class="badge badge-income">Paga</span></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Accounts Receivable (Contas a Receber) -->
+    <div class="content-card">
+        <h3>Contas a Receber (Receitas Futuras)</h3>
+        
+        <!-- Add Bill Receivable Form -->
+        <form action="{{ url_for('bills.add_receivable') }}" method="POST" style="margin-bottom: 30px; padding: 20px; background-color: var(--color-off-white); border-radius: var(--border-radius-md); border: 1px solid var(--color-light-gray);">
+            <h4 style="font-size: 1rem; color: var(--color-dark-green); margin-bottom: 15px;">Novo Valor a Receber</h4>
+            <div class="form-group">
+                <input type="text" name="name" class="form-control" placeholder="Descrição (Ex: Salário, Freelance, Reembolso)" required style="padding: 8px 12px; font-size: 0.9rem;">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <input type="number" name="amount" class="form-control" step="0.01" placeholder="Valor (R$)" required style="padding: 8px 12px; font-size: 0.9rem;">
+                </div>
+                <div class="form-group">
+                    <input type="date" name="expected_date" class="form-control" required style="padding: 8px 12px; font-size: 0.9rem;">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Adicionar Conta a Receber</button>
+        </form>
+
+        <!-- Pending Receivables list -->
+        <h4 style="font-size: 1.1rem; color: var(--color-dark-green); margin-bottom: 15px;">A Receber</h4>
+        {% set pending_receivables = bills_receivable | rejectattr('status', 'equalto', 'received') | list %}
+        {% if pending_receivables %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Esperado</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in pending_receivables %}
+                            <tr>
+                                <td style="font-weight: 500;">{{ bill.name }}</td>
+                                <td>{{ bill.expected_date.strftime('%d/%m/%Y') }}</td>
+                                <td style="font-weight: 600; color: var(--color-success);">R$ {{ "%.2f"|format(bill.amount) }}</td>
+                                <td>
+                                    <!-- Simple Receive Dropdown Form -->
+                                    <form action="{{ url_for('bills.receive_receivable', id=bill.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 5px;">
+                                        <select name="account_id" class="form-control" style="padding: 4px 8px; font-size: 0.8rem;" required>
+                                            <option value="">Depositar em...</option>
+                                            {% for acc in accounts %}
+                                                <option value="{{ acc.id }}">{{ acc.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="btn btn-primary btn-sm" style="padding: 4px 8px; font-size: 0.75rem;">Marcar como Recebida</button>
+                                    </form>
+                                    
+                                    <form action="{{ url_for('bills.delete_receivable', id=bill.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Deseja excluir este item?');">
+                                        <button type="submit" style="background: none; border: none; cursor: pointer; color: var(--color-danger); font-size: 0.8rem;">Excluir</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p style="font-size: 0.9rem; color: var(--color-sage); text-align: center; margin: 20px 0;">Nenhum recebimento planejado.</p>
+        {% endif %}
+
+        <!-- Received History -->
+        {% set received_receivables = bills_receivable | selectattr('status', 'equalto', 'received') | list %}
+        {% if received_receivables %}
+            <h4 style="font-size: 1.1rem; color: var(--color-dark-green); margin-top: 30px; margin-bottom: 15px;">Recebidas Recentemente</h4>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in received_receivables %}
+                            <tr>
+                                <td>{{ bill.name }}</td>
+                                <td style="opacity: 0.6;">R$ {{ "%.2f"|format(bill.amount) }}</td>
+                                <td><span class="badge badge-income">Recebida</span></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set today's date on both date fields
+        const today = new Date().toISOString().split('T')[0];
+        document.querySelectorAll('input[type="date"]').forEach(input => {
+            if (!input.value) {
+                input.value = today;
+            }
+        });
+    });
+</script>
+{% endblock %}

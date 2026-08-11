@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Orçamentos{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title">
+        <h2>Orçamentos Mensais</h2>
+        <p>Defina limites de gastos por categoria para manter a saúde financeira</p>
+    </div>
+</div>
+
+<div class="section-grid">
+    <!-- Budgets List -->
+    <div class="content-card">
+        <h3>Limites e Acompanhamento</h3>
+        
+        {% if budgets %}
+            {% for budget in budgets %}
+                <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid var(--color-light-gray);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div>
+                            <span style="font-weight: 700; font-size: 1.1rem; color: var(--color-dark-green);">{{ budget.category }}</span>
+                            <span style="font-size: 0.8rem; color: var(--color-sage); margin-left: 10px;">({{ budget.period }})</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span style="font-weight: 600; font-size: 0.95rem;">
+                                R$ {{ "%.2f"|format(budget.current_spent) }} / R$ {{ "%.2f"|format(budget.amount_limit) }}
+                            </span>
+                            <form action="{{ url_for('budgets.delete', id=budget.id) }}" method="POST" onsubmit="return confirm('Deseja excluir este orçamento?');">
+                                <button type="submit" style="background: none; border: none; cursor: pointer; color: var(--color-danger);">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill {% if budget.raw_percent >= 100 %}danger{% elif budget.raw_percent >= 80 %}warning{% endif %}" 
+                             style="width: {{ budget.percent }}%;"></div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--color-sage); margin-top: 5px;">
+                        {% if budget.amount_limit > budget.current_spent %}
+                            <span>Restam: R$ {{ "%.2f"|format(budget.amount_limit - budget.current_spent) }}</span>
+                        {% else %}
+                            <span style="color: var(--color-danger); font-weight: 600;">Orçamento excedido em R$ {{ "%.2f"|format(budget.current_spent - budget.amount_limit) }}!</span>
+                        {% endif %}
+                        <span>{{ "%.1f"|format(budget.raw_percent) }}% utilizado</span>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <p>Nenhum limite de orçamento cadastrado.</p>
+                <p style="font-size: 0.85rem; color: var(--color-sage);">Cadastre limites para categorias como Alimentação, Transporte, Lazer, etc. no formulário ao lado.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Add Budget Form -->
+    <div class="content-card" style="height: fit-content;">
+        <h3>Definir Limite de Gastos</h3>
+        <form action="{{ url_for('budgets.add') }}" method="POST">
+            <div class="form-group">
+                <label for="category" class="form-label">Categoria <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">Escolha a categoria que terá o limite de despesas monitorado este mês.</span></div></label>
+                <select id="category" name="category" class="form-control" required>
+                    <option value="Alimentação">Alimentação</option>
+                    <option value="Transporte">Transporte</option>
+                    <option value="Moradia">Moradia</option>
+                    <option value="Lazer">Lazer</option>
+                    <option value="Saúde">Saúde</option>
+                    <option value="Educação">Educação</option>
+                    <option value="Assinaturas/Serviços">Assinaturas/Serviços</option>
+                    <option value="Outros">Outros</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="amount_limit" class="form-label">Limite Mensal (R$) <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">O valor máximo que você planeja ou pode gastar para a categoria selecionada.</span></div></label>
+                <input type="number" id="amount_limit" name="amount_limit" class="form-control" step="0.01" placeholder="Ex: 800.00" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="period" class="form-label">Período <div class="tooltip"><span class="help-badge">?</span><span class="tooltiptext">A periodicidade de renovação do limite orçamentário.</span></div></label>
+                <select id="period" name="period" class="form-control" required>
+                    <option value="monthly">Mensal</option>
+                    <option value="yearly">Anual</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Salvar Limite</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
